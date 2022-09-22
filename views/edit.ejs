@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+
+    <title>Hello, world!</title>
+  </head>
+  <body>
+
+      <%- include('nav.html') %>
+
+      <div style="padding: 50px;">
+        <form action="/edit?_method=PUT" method="POST">
+            <div class="form-group">
+              <label for="first">할일</label>
+              <input type="text" value="<%= editdata._id %>" name="id" style="display: none;">
+              <input type="text" class="form-control" id="first" name="title" autofocus="off" value="<%= editdata.제목 %>">
+              <small id="emailHelp" class="form-text text-muted">수정하자</small>
+            </div>
+            <div class="form-group">
+              <label for="datee">Date</label>
+              <input type="date" class="form-control" id="datee" name="date" autofocus="off" value="<%= editdata.날짜 %>">
+            </div>
+            <button type="submit" class="btn btn-secondary">수정</button>
+          </form>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+      
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
+
+  </body>
+</html>

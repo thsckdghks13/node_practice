@@ -3,7 +3,20 @@ const app = express();
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({extended : true}));
 const MongoClient = require('mongodb').MongoClient;
+const methodOverride = require('method-override')
+app.use(methodOverride('_method'))
 app.set('view engine', 'ejs');
+
+app.use('/public', express.static('public'));
+
+app.get('/', function(req, res){
+    res.render('index.ejs');
+});
+
+app.get('/write', function(req, res){
+    res.render('write.ejs');
+});
+
 
 
 var db;
@@ -38,9 +51,9 @@ MongoClient.connect('mongodb+srv://gto159:asd123@cluster0.tkjf8is.mongodb.net/?r
         });
 
 
+        res.redirect('/list')
+        // res.send('전송완료');
         
-        res.send('전송완료');
-        return 
     });
 
     app.get('/list', function(req, res){
@@ -61,9 +74,39 @@ MongoClient.connect('mongodb+srv://gto159:asd123@cluster0.tkjf8is.mongodb.net/?r
             res.status(200).send({message : '성공!'});
             // res.status(400).send({message : '실패!'});
             console.log('삭제완료');
+            db.collection('counter').updateOne({name : '게시물개수'} , { $inc : {totalPost : -1} }, function(error, result){
+                console.log('updateCounter');
+            });
         });
     })
 
+    app.get('/detail/:id', function(req, res){
+        db.collection('post').findOne({ _id : parseInt(req.params.id) }, function(error, result){
+            if(result == null){
+                res.status(400).send('게시글이 없습니다.');
+            } else {
+                res.render('detail.ejs', { data : result })
+            }
+            console.log(result)
+            
+            
+        })
+        
+    });
+
+    app.get('/edit/:id', function(req, res){
+        db.collection('post').findOne({ _id : parseInt(req.params.id)}, function(error, result){
+            res.render('edit.ejs', { editdata : result });
+        })
+
+    });
+
+    app.put('/edit', function(req, res){
+        db.collection('post').updateOne({ _id: parseInt(req.body.id) },{ $set : { 제목 : req.body.title, 날짜 : req.body.date}},function(error, result){
+            console.log('수정완료')
+            res.redirect('/list')
+        })
+    })
 });
 
 
@@ -84,7 +127,7 @@ es6 문법
 app.get('/경로', (요청, 응답) => {
     응답.send('펫핑하실라우.');
 });
-*/
+
 
 app.get('/pet', function(req, res){
     res.send('펫핑하실라우.');
@@ -98,3 +141,4 @@ app.get('/write', function(req, res){
     res.sendFile(__dirname + '/write.html');
 });
 
+*/
