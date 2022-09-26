@@ -31,32 +31,7 @@ MongoClient.connect(process.env.DB_URL, function(error, client){
         console.log('listening on 8080')
     });
 
-    app.post('/add', function(req, res){
 
-        var title = req.body.title
-        var dating = req.body.date
-
-        db.collection('counter').findOne({name : '게시물개수'}, function(error, result){
-            const total = result.totalPost;
-
-            db.collection('post').insertOne({_id : total + 1, 제목 : title, 날짜 : dating} , function(error, result){
-                console.log('saveComplete');
-
-                db.collection('counter').updateOne({name : '게시물개수'} , { $inc : {totalPost : 1} }, function(error, result){
-                    console.log('updateCounter');
-                });
-                //updateOne = 하나만 < - > updateMany = 여러개
-                //operator $set(변경), $inc(증가), $min(기존값보다 적을 때만 변경), $rename(key값 이름 변경)
-            });
-
-
-        });
-
-
-        res.redirect('/list')
-        // res.send('전송완료');
-        
-    });
 
     app.get('/list', function(req, res){
         
@@ -69,15 +44,29 @@ MongoClient.connect(process.env.DB_URL, function(error, client){
 
     });
 
-
+    app.get('/search', function(req, res){
+        var 검색조건 = [{
+            $search: {
+                index: 'titleSearch',
+                text: {
+                    query: req.query.value,
+                    path:['제목', '날짜']
+                }
+            }
+        }]
+        db.collection('post').aggregate(검색조건).toArray(function(error, result){
+            console.log(result)
+            res.render('search.ejs', { searchD : result });
+        });
+    });
+/*
     app.get('/search', function(req, res){
         db.collection('post').find({ 제목 : req.query.value}).toArray(function(error, result){
             console.log(result)
             res.render('search.ejs', { searchD : result });
         });
     });
-
-    
+*/
     app.delete('/delete', function(req, res){
         req.body._id = parseInt(req.body._id);
         var deletebody = req.body
@@ -156,19 +145,19 @@ passport.use(new LocalStrategy({
     passwordField: 'pw',
     session: true,
     passReqToCallback: false,
-  }, function (입력한아이디, 입력한비번, done) {
+}, function (입력한아이디, 입력한비번, done) {
     //console.log(입력한아이디, 입력한비번);
     db.collection('login').findOne({ id: 입력한아이디 }, function (error, result) {
-      if (error) return done(error)
-  
-      if (!result) return done(null, false, { message: '존재하지않는 아이디요' })
-      if (입력한비번 == result.pw) {
+    if (error) return done(error)
+
+    if (!result) return done(null, false, { message: '존재하지않는 아이디요' })
+    if (입력한비번 == result.pw) {
         return done(null, result)
-      } else {
+    } else {
         return done(null, false, { message: '비번틀렸어요' })
-      }
+    }
     })
-  }));
+}));
 
 
 passport.serializeUser(function(user, done){
@@ -183,10 +172,72 @@ passport.deserializeUser(function(아이디, done){
 
 });
 
+app.post('/register', function(req, res){
+    db.collection('login').insertOne( { id: req.body.id, pw: req.body.pw }, function(error, result){
+        res.redirect('/')
+    });
+});
+
+app.post('/add', function(req, res){
+    var title = req.body.title
+    var dating = req.body.date
+    
+    db.collection('counter').findOne({name : '게시물개수'}, function(error, result){
+        const total = result.totalPost;
+
+        db.collection('post').insertOne({_id : total + 1, 제목 : title, 날짜 : dating, 작성자 : req.user._id} , function(error, result){
+            console.log('saveComplete');
+
+            db.collection('counter').updateOne({name : '게시물개수'} , { $inc : {totalPost : 1} }, function(error, result){
+                console.log('updateCounter');
+            });
+            //updateOne = 하나만 < - > updateMany = 여러개
+            //operator $set(변경), $inc(증가), $min(기존값보다 적을 때만 변경), $rename(key값 이름 변경)
+        });
+
+
+    });
+
+
+    res.redirect('/list')
+    // res.send('전송완료');
+    
+});
+
+let multer = require('multer');
+var storage = multer.diskStorage({
+    destination : function(req, file, cb){
+        cb(null, './public/image')
+    },
+    filename : function(req, file, cb){
+        cb(null, file.originalname)
+    },
+    filefilter : function(req, file, cb){
+        var ext = path.extname(file.originalname);
+        if(ext !== '.png' && ext !== '.jpg' && ext !== '.jpeg') {
+            return callback(new Error('PNG, JPG만 업로드하세요'))
+        }
+        callback(null, true)
+    }
+});
+
+var upload = multer({storage : storage});
+
+app.get('/upload', function(req, res){
+    res.render('upload.ejs')
+})
+
+app.post('/upload', upload.single('pass'), function(req, res){
+    res.send('업로드완료')
+});
+
+app.get('/image/:imgname', function(req,res){
+    res.sendFile(__dirname + '/public/image/' + req.params.imgname)
+});
 
 
 
-
+app.use('/shop', require('./routes/shop'));
 // req = request '요청'
 // res = response '응답'
 
